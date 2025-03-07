@@ -178,13 +178,9 @@ We welcome contributions to improve the benchmark framework. Please feel free to
 
 If you use this code in your research, please cite our paper:
 @article{IceBench,
-
 title={IceBench: A Benchmark for Deep Learning based Sea Ice Type Classification},
-
 author={Samira Alkaee Taleghan, Andrew P. Barrett, Walter N. Meier, Morteza Karimzadeh, Farnoush Banaei-Kashani},
-
 journal={Journal Name},
-
 year={2025}
 }
 
