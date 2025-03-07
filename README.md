@@ -177,11 +177,11 @@ We welcome contributions to improve the benchmark framework. Please feel free to
 ## Citation
 
 If you use this code in your research, please cite our paper:
-@article{author2024benchmark,
-title={Benchmark Framework for Sea Ice Type Classification},
-author={Author, A. and Author, B.},
+@article{IceBench,
+title={IceBench: A Benchmark for Deep Learning based Sea Ice Type Classification},
+author={Samira Alkaee Taleghan, Andrew P. Barrett, Walter N. Meier, Morteza Karimzadeh, Farnoush Banaei-Kashani},
 journal={Journal Name},
-year={2024}
+year={2025}
 }
 
 
