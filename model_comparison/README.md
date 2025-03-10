@@ -41,9 +41,7 @@ No need to specify these manually; they load automatically.
 |----------------|-------------|
 | `--model_file` | Path to your model file |
 | `--model_class` | Model class name in the file |
-| `--task_type` | `classification` or `segmentation` (defaults to config) |
 | `--mode` | `train`, `evaluate`, or `both` (default: `both`) |
-| `--model_params` | JSON string of model parameters (optional) |
 | `--output_dir` | Directory for results (default: `model_results`) |
 | `--compare_with` | Paths to saved model checkpoints for comparison (optional) |
 
