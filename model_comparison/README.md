@@ -81,31 +81,31 @@ python model_compare.py \
 
 ---
 
-## 📂 Output
+## Output
 
 Each run creates a timestamped directory containing:
 
-- 📌 Saved model checkpoints
-- 📈 Training history and plots
-- 🏆 Evaluation metrics
-- 📊 Comparison charts (if comparing with other models)
-- 📑 Copies of the configuration files used
+- Saved model checkpoints
+- Training history and plots
+- Evaluation metrics
+- Comparison charts (if comparing with other models)
+- Copies of the configuration files used
 
 ---
 
-## ⚡ PyTorch Lightning Integration
+## PyTorch Lightning Integration
 
 This script leverages **PyTorch Lightning** for:
 
-- 🚀 Automatic GPU/CPU detection
-- 📊 Progress tracking and logging
-- ⏳ Early stopping
-- 📌 Model checkpointing
-- 📉 TensorBoard integration
+- Automatic GPU/CPU detection
+- Progress tracking and logging
+- Early stopping
+- Model checkpointing
+- TensorBoard integration
 
 ---
 
-## 🛠 Troubleshooting
+## Troubleshooting
 
 🔹 **CUDA Out of Memory** → Reduce batch size in config.  
 🔹 **Model Doesn't Fit Data** → Ensure input/output dimensions match dataset.  
@@ -113,4 +113,3 @@ This script leverages **PyTorch Lightning** for:
 
 ---
 
-Happy modeling! 🎉
