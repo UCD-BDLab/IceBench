@@ -24,7 +24,7 @@ The script automatically uses configuration files in the `configs` directory.
 
 Your model should be a PyTorch module defined in a Python file. Below are templates for classification and segmentation models.
 
-## ⚙ Configuration
+## Configuration
 
 The script uses configuration files from the `configs` directory:
 
