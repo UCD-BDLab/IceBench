@@ -3,7 +3,7 @@
 
 This repository contains the code implementation for the paper "IceBench: A Benchmark for Deep Learning based Sea Ice Type Classification". Our framework provides a comprehensive approach to analyzing and classifying sea ice types using various deep learning techniques. This benchmark is designed to accurately track progress in sea ice type classification at the pixel or patch level. Despite the many studies on this subject, it’s often still not clear which methods truly work well.
 
-[![arXiv Paper](https://img.shields.io/badge/arXiv-Paper-green)](https://arxiv.org/abs/XXXX) [![MDPI Paper](https://img.shields.io/badge/MDPI-Paper-blue)](#) [![Awesome Sea Ice Papers 😎](https://img.shields.io/badge/Awesome_Sea_Ice_Papers-😎-9400D3?style=flat-square)](https://github.com/samiraat/Awesome-Sea-Ice-Papers) [![Sea Ice Leaderboard 🏆](https://img.shields.io/badge/Sea_Ice_Leaderboard-🏆-FF8C00?style=flat-square)](https://github.com/bdlab-ucd/sea-ice-leaderboard)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-Paper-green)](https://arxiv.org/abs/XXXX) [![MDPI Paper](https://img.shields.io/badge/MDPI-Paper-blue)](#) [![Awesome Sea Ice Papers 😎](https://img.shields.io/badge/Awesome_Sea_Ice_Papers-😎-9400D3?style=flat-square)](https://github.com/samiraat/Awesome-Sea-Ice-Papers) [![Sea Ice Type Leaderboard 🏆](https://img.shields.io/badge/Sea_Ice_Leaderboard-🏆-FF8C00?style=flat-square)](https://github.com/bdlab-ucd/sea-ice-leaderboard)
  [![IceBench ❄️](https://img.shields.io/badge/IceBench-❄️-1E90FF?style=flat-square)](https://github.com/bdlab-ucd/IceBench/tree/main)
 
 
