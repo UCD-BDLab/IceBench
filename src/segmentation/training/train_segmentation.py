@@ -7,7 +7,7 @@ import gc
 import numpy as np
 import os
 
-def train_and_validate_segmentation(hparams_data, hparams_model, model, model_name, criterion, optimiser, scheduler, scheduler_name, train_loader, val_loader, device, model_path, load=False):
+def train_segmentation(hparams_data, hparams_model, model, model_name, criterion, optimiser, scheduler, scheduler_name, train_loader, val_loader, device, model_path, load=False):
     torch.backends.cudnn.benchmark = True
    
     train_losses = []
@@ -146,16 +146,8 @@ def train_and_validate_segmentation(hparams_data, hparams_model, model, model_na
     print(f'{(end_time-start_time)/60:.2f} minutes for model training...', end=' ')
 
 
-import torch
-import time
-from tqdm import tqdm
-from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score, jaccard_score
-from sklearn.metrics import mean_squared_error, r2_score
-import gc
-import numpy as np
-import os
 
-def train_segmentation(
+def train_segmentation_with_config(
     hparams_data,
     hparams_model,
     model,

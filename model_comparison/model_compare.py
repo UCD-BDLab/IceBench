@@ -3,7 +3,6 @@ import sys
 import argparse
 import importlib.util
 import torch
-import configparser
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,16 +14,24 @@ import random
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
+from pathlib import Path
 
-# Import utility functions
-from src.utils.utils import *
+# Add the project root directory to Python path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
 
-# Conditional imports for different tasks
 try:
+    # Add these imports at the top
+    from src.utils.utils import *
+    from src.classification.training_evaluate.train_classification import train_and_evaluate_classification
+    from src.classification.training_evaluate.evaluate_classification import evaluate_classification_model
+    from src.segmentation.training.evaluate_segmentation import evaluate_segmentation_model
+    from src.segmentation.training.train_segmentation import train_and_evaluate_segmentation
     from src.classification.data_loader.data_loader_classification import BenchmarkDataset_directory, BenchmarkTestDataset_directory
     from src.segmentation.data_loader.data_loader_segmentation import BenchmarkDataset, BenchmarkTestDataset
+
 except ImportError as e:
-    print(f"Warning: Could not import data loaders: {e}")
+    print(f"Warning: Could not import {e}")
 
 
 def load_user_model(model_file_path: str, model_class_name: str) -> torch.nn.Module:
@@ -139,14 +146,21 @@ def setup_dataloaders(task_type: str, data_config: Dict, model_config: Dict) -> 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
-    
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size, num_workers=num_workers
-    )
-    
-    test_loader = torch.utils.data.DataLoader(
-        test_dataset, batch_size=batch_size, num_workers=num_workers
-    )
+    if task_type == "classification":
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset, batch_size=batch_size, num_workers=num_workers
+        )
+        
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=batch_size, num_workers=num_workers
+        )
+    elif task_type == "segmentation":
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset, batch_size=1 , num_workers=num_workers
+        )
+        test_loader = torch.utils.data.DataLoader(
+            test_dataset, batch_size=1, num_workers=num_workers
+        )
     
     return train_loader, val_loader, test_loader
 
@@ -179,8 +193,7 @@ class LightningModelWrapper(pl.LightningModule):
         if self.task_type == "classification":
             self.criterion = torch.nn.CrossEntropyLoss()
         else:  # segmentation
-            ignore_index = self.hparams_data['class_fill_values'].get(
-                self.hparams_model['model']['label'].strip("'"), 255)
+            ignore_index = self.hparams_model['train']['ignore_index']
             self.criterion = torch.nn.CrossEntropyLoss(ignore_index=ignore_index)
     
     def forward(self, x):
@@ -307,9 +320,10 @@ class LightningModelWrapper(pl.LightningModule):
         Returns:
             Optimizer and learning rate scheduler
         """
-        optimizer_name = self.hparams_model['optimizer']['optimizer'].lower()
-        lr = float(self.hparams_model['optimizer']['lr'])
-        weight_decay = float(self.hparams_model['optimizer']['weight_decay'])
+        optimizer_name = self.hparams_model['Optimizer']['optimizer'].lower()
+        lr = float(self.hparams_model['Optimizer']['lr'])
+        weight_decay = float(self.hparams_model['Optimizer']['weight_decay'])
+        scheduler_name = self.hparams_model['Optimizer']['scheduler_name']
         
         if optimizer_name == 'adam':
             optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=weight_decay)
@@ -317,8 +331,7 @@ class LightningModelWrapper(pl.LightningModule):
             optimizer = torch.optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=weight_decay)
         else:
             raise ValueError(f"Unsupported optimizer: {optimizer_name}")
-        
-        scheduler_name = self.hparams_model['optimizer']['scheduler_name']
+    
         
         if scheduler_name == 'CosineAnnealingWarmRestarts':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
@@ -333,7 +346,7 @@ class LightningModelWrapper(pl.LightningModule):
                 }
             }
         elif scheduler_name == 'ReduceLROnPlateau':
-            patience = int(self.hparams_model['optimizer']['reduce_lr_patience'])
+            patience = int(self.hparams_model['Optimizer']['reduce_lr_patience'])
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer, mode='min', factor=0.5, patience=patience, verbose=True
             )

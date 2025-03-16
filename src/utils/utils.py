@@ -10,7 +10,7 @@ from torchvision import transforms
 import json
 
 
-from data_preprocessing.Create_label_charts import ice_chart_mapping
+from src.data_preprocessing.Create_label_charts import ice_chart_mapping
 
 def read_config_file(config_file_path):
     config = configparser.ConfigParser()
@@ -84,7 +84,6 @@ def process_settings_data(config):
         'SOD': SOD_config_dict['n_classes'],
         'FLOE': FLOE_config_dict['n_classes'] }
 
-    validate_configurations(settings_data)
     return {
         'dir_train_without_icecharts': dir_train_without_icecharts,
         'dir_test': dir_test,
@@ -132,49 +131,6 @@ def read_config_model(config_file_path):
     
     return config_dict
 
-def validate_configurations(settings_data):
-    # Expected types for Data_preprocess_options
-    expected_types_data_preprocess = {
-        'patch_size': int,
-        'use_patch_with_stride': bool,
-        'use_patch_with_randomcrop': bool,
-        'downsampling': bool,
-        'downsampling_factor': int,
-        'loader_upsampling': str,
-        'variables_to_downsample': list,
-        'original_pixel_spacing': int,
-        'land_masking': bool,
-        'distance_to_border': bool,
-        'distance_border_threshold': int,
-        'seasonality': str,
-    }
-
-    # Expected types for Train_data_options
-    expected_types_train_data = {
-        'season': str,
-        'location': list,
-    }
-
-    # Helper function to check types
-    def check_types(config, expected_types):
-        for key, expected_type in expected_types.items():
-            if key not in config:
-                raise ValueError(f"Missing configuration key: {key}")
-            if not isinstance(config[key], expected_type):
-                raise TypeError(f"Incorrect type for '{key}'. Expected {expected_type}, got {type(config[key])}.")
-
-            # Check for nested lists of strings
-            if isinstance(config[key], list):
-                if not all(isinstance(i, str) for i in config[key]):
-                    raise TypeError(f"All elements in the list for '{key}' should be strings.")
-
-    # Validate both configurations
-    try:
-        check_types(Data_preprocess_options, expected_types_data_preprocess)
-        check_types(Train_data_options, expected_types_train_data)
-        print("All configurations are correctly formatted.")
-    except (TypeError, ValueError) as e:
-        print(f"Configuration Error: {e}")
 
 def check_labels_ready(dir_train, settings_data):
     all_files_have_labels = True  # Assume all files have labels initially
@@ -750,3 +706,8 @@ def get_location(file_name):
             return key
     return None
     
+def read_filenames_from_json(file_path):
+    """Read filenames from a JSON file and return them as a list."""
+    with open(file_path, 'r') as file:
+        filenames = json.load(file)
+    return filenames

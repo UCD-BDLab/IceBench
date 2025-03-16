@@ -1,13 +1,14 @@
 import os
 import numpy as np
 import math
-import torch
 import os
-import numpy as np
 import xarray as xr
 import torch
 from itertools import product
-
+from utils import *
+import math
+from season_based_arctic_Seaice import check_season , return_season
+from src.data_preprocessing.prepare_data import *
 
 class PatchExtractor:
     """
@@ -182,70 +183,236 @@ class PatchExtractor:
         samples = np.stack(samples_list, axis=0)
         labels = np.stack(labels_list, axis=0)
         return samples, labels
-
-def generate_patches_for_season_loc(hparams_data , hparams_model, season, loc, out_dir):
-    """
-    Generate training, validation, and test patches for a specified season and location.
-
-    """
-    # Set global statistics file for normalization
-    hparams_data['meanstd_file'] = 'global_mean_std.npy'
-    hparams_data['mean_std_dict'] = np.load(hparams_data['meanstd_file'], allow_pickle=True).item()
     
-    # Preprocess data to upsample AMSR variables if applicable
-    if len(hparams_data['amsr_env_variables']) > 0:
-        print(" Upsampling AMSR environmental variables for enhanced resolution...")
-        hparams_data = get_variable_options(hparams_data, hparams_model)
-    print(" Data preprocessing for training and testing completed.")
+    def process_scene_season_loc(self , files_list , data_type ,season , location , out_dir):
 
-    # Data Loader Configuration
-    np.random.seed(int(hparams_model['datamodule']['seed']))
+        if data_type == 'train':
+            #files_list = np.random.choice(files_list, 50)
+            dir = self.data_options['dir_train_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_train_{self.task}_{self.patch_size}_{season}_{location}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            
+            self.data_options['dir_samples_labels_train'] = out_dir
+
+
+        elif data_type == 'test':
+            dir = self.data_options['dir_test_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_test_{self.task}_{self.patch_size}_{season}_{location}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            self.data_options['dir_samples_labels_test'] = out_dir
+
+        elif data_type == 'validation':
+            dir = self.data_options['dir_train_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_val_{self.task}_{self.patch_size}_{season}_{location}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            
+            self.data_options['dir_samples_labels_val'] = out_dir
+
+            
+        #files_list = self.files
+        counter = 0
+
+        
+        for i in range(len(files_list)):
+       
+            scene = xr.open_dataset(os.path.join(dir, files_list[i]))
+
+            #extract the scene name befor the .nc extension
+            scene_name = files_list[i].split('.')[0]
+
+   
+            try:
+                samples , labels = self.extract_patches(scene , scene_name )
+
+            except:
+                print("No valid patches found for this scene {} ".format(scene_name))
+                continue
+            
+            if samples is not None and labels is not None:
+                # Reshape labels to (32, 1)
+                if self.task == 'classification':
+                    labels = np.reshape(labels, (-1, 1))
+
+                print("there are {} samples in {} scene".format(int(samples.shape[0] ) , scene_name))
+                num_batches = samples.shape[0] / self.batch_size
+                num_samples = samples.shape[0]
+                
+                #option to save the samples and labels in batches
+                # for j in range(int(num_batches)):
+                #     np.save(os.path.join(out_dir, f"{counter}_samples.npy"), samples[j * self.batch_size: (j + 1) * self.batch_size])
+                #     np.save(os.path.join(out_dir, f"{counter}_labels.npy"), labels[j * self.batch_size: (j + 1) * self.batch_size])
+                #     counter += 1
+
+                # save all the samples and files with counter
+                for i in range(num_samples):
+                    np.save(os.path.join(out_dir, f"{scene_name}_{counter}_samples.npy"), samples[i])
+                    np.save(os.path.join(out_dir, f"{scene_name}_{counter}_labels.npy"), labels[i])
+                    counter += 1
+
+
+            
+            scene.close()
+            
+        print("Done extracting patches from all scenes for {} data".format(data_type))
+
+    def process_files_season_loc (self , season , location , out_dir_parent):
+  
+        dir = self.data_options['dir_train_with_icecharts']
+        #parent_dir = os.path.dirname(dir)
+        parent_dir = out_dir_parent
+        out_dir = os.path.join(parent_dir, f"samples_labels_train_{self.task}_{self.patch_size}_{season}_{location}")
+        if not os.path.exists(out_dir):
+            
+            self.process_scene_season_loc(self.data_options['train_list'] , 'train' , season , location , out_dir) 
+            
+        else:
+            self.data_options['dir_samples_labels_train'] = out_dir
+        
+
+        dir = self.data_options['dir_test_with_icecharts']
+        #parent_dir = os.path.dirname(dir)
+        parent_dir = out_dir_parent
+        out_dir = os.path.join(parent_dir, f"samples_labels_test_{self.task}_{self.patch_size}_{season}_{location}")
+
+        if not os.path.exists(out_dir):
+            
+            self.process_scene_season_loc(self.data_options['test_list'] , 'test' , season , location , out_dir)
+        else:
+            self.data_options['dir_samples_labels_test'] = out_dir
+     
+
+        dir = self.data_options['dir_train_with_icecharts']
+        #parent_dir = os.path.dirname(dir)
+        parent_dir = out_dir_parent
+        out_dir = os.path.join(parent_dir, f"samples_labels_val_{self.task}_{self.patch_size}_{season}_{location}")
+        if not os.path.exists(out_dir):
+            
+            self.process_scene_season_loc(self.data_options['validation_list'] , 'validation' , season, location , out_dir)
+        else:
+            self.data_options['dir_samples_labels_val'] = out_dir
+      
+        return self.data_options
     
-    # Filter files for training by season and location
-    all_files_train = [f for f in os.listdir(hparams_data['dir_train_with_icecharts']) if f.endswith(".nc")]
-    print(f"Total available training files: {len(all_files_train)}")
+
+    #save the sample and labes with batch size
+
+    def process_scene_with_dir(self , files_list , data_type , out_dir):
+
+        if data_type == 'train':
+            #files_list = np.random.choice(files_list, 50)
+            dir = self.data_options['dir_train_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_train_{self.task}_{self.patch_size}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            
+            self.data_options['dir_samples_labels_train'] = out_dir
+
+
+        elif data_type == 'test':
+            dir = self.data_options['dir_test_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_test_{self.task}_{self.patch_size}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            self.data_options['dir_samples_labels_test'] = out_dir
+
+        elif data_type == 'validation':
+            dir = self.data_options['dir_train_with_icecharts']
+            parent_dir = os.path.dirname(dir)
+            #out_dir = os.path.join(parent_dir, f"samples_labels_val_{self.task}_{self.patch_size}")
+            if not os.path.exists(out_dir):
+                os.mkdir(out_dir)
+            self.data_options['dir_samples_labels_val'] = out_dir
+
+            
+        #files_list = self.files
+        counter = 0
+
+        
+        for i in range(len(files_list)):
+       
+            scene = xr.open_dataset(os.path.join(dir, files_list[i]))
+
+            #extract the scene name befor the .nc extension
+            scene_name = files_list[i].split('.')[0]
+
+   
+            try:
+                samples , labels = self.extract_patches(scene , scene_name )
+
+            except:
+                print("No valid patches found for this scene {} ".format(scene_name))
+                continue
+            
+            if samples is not None and labels is not None:
+                # Reshape labels to (32, 1)
+                if self.task == 'classification':
+                    labels = np.reshape(labels, (-1, 1))
+
+                print("there are {} samples in {} scene".format(int(samples.shape[0] ) , scene_name))
+                num_batches = samples.shape[0] / self.batch_size
+                num_samples = samples.shape[0]
+                
+                #option to save the samples and labels in batches
+                # for j in range(int(num_batches)):
+                #     np.save(os.path.join(out_dir, f"{counter}_samples.npy"), samples[j * self.batch_size: (j + 1) * self.batch_size])
+                #     np.save(os.path.join(out_dir, f"{counter}_labels.npy"), labels[j * self.batch_size: (j + 1) * self.batch_size])
+                #     counter += 1
+
+                # save all the samples and files with counter
+                for i in range(num_samples):
+                    np.save(os.path.join(out_dir, f"{scene_name}_{counter}_samples.npy"), samples[i])
+                    np.save(os.path.join(out_dir, f"{scene_name}_{counter}_labels.npy"), labels[i])
+                    counter += 1
+
+            # free the memory
+            # remove samples labels
+            del samples , labels       
+            
+            scene.close()
+            
+        print("Done extracting patches from all scenes for {} data".format(data_type))
+
+   
+
+    def process_files_with_dir (self , out_parent_dir):
+  
+        dir = self.data_options['dir_train_with_icecharts']
+        parent_dir = out_parent_dir
+        out_dir = os.path.join(parent_dir, f"samples_labels_train_{self.task}_{self.patch_size}")
+        if not os.path.exists(out_dir):
+            self.process_scene_with_dir(self.data_options['train_list'] , 'train' , out_dir) 
+            
+        else:
+            self.data_options['dir_samples_labels_train'] = out_dir
+        
+
+        dir = self.data_options['dir_test_with_icecharts']
+        parent_dir = out_parent_dir
+        out_dir = os.path.join(parent_dir, f"samples_labels_test_{self.task}_{self.patch_size}")
+
+        if not os.path.exists(out_dir):
+            self.process_scene_with_dir(self.data_options['test_list'] , 'test' , out_dir)
+        else:
+            self.data_options['dir_samples_labels_test'] = out_dir
+     
+
+        dir = self.data_options['dir_train_with_icecharts']
+        parent_dir = out_parent_dir
+        out_dir = os.path.join(parent_dir, f"samples_labels_val_{self.task}_{self.patch_size}")
+        if not os.path.exists(out_dir):
+            self.process_scene_with_dir(self.data_options['validation_list'] , 'validation' , out_dir)
+        else:
+            self.data_options['dir_samples_labels_val'] = out_dir
+      
+        return self.data_options
     
-    # Set season and location settings for filtering
-    hparams_data['train_data_options']['location'] = [loc]
-    hparams_data['train_data_options']['season'] = season
-    seasona = hparams_data['train_data_options']['season'].strip("'")
-    category_location = hparams_data['train_data_options']['location'][0]
-
-    # Filter the files based on specified season and location
-    specific_locations = hparams_data['train_data_options'][category_location]
-    season_loc_files = [f for f in all_files_train if location(f) in specific_locations and is_season(f, seasona)]
-    print(f" For season '{seasona}' and location category '{category_location}', filtered training files: {len(season_loc_files)}")
-
-    # Generate a validation list from the filtered files
-    val_num = math.ceil(len(season_loc_files) * 0.1)  # 10% validation split
-    validation_list = np.random.choice(season_loc_files, val_num, replace=False).tolist()
-    print(f"Validation list for season '{seasona}' and location '{category_location}': {len(validation_list)} samples.")
-
-    # Create a training list by excluding validation samples
-    train_list = [x for x in season_loc_files if x not in validation_list]
-    print(f" Training list for season '{seasona}': {len(train_list)} samples.")
-
-    # Prepare test files by filtering based on location and season
-    all_test_files = os.listdir(hparams_data['dir_test_with_icecharts'])
-    season_loc_test = [f for f in all_test_files if location(f) in specific_locations and is_season(f, seasona)]
-    test_list = season_loc_test
-    print(f"Test list for season '{seasona}' and location '{category_location}': {len(test_list)} samples.")
-
-    # Update hparams_data with the new train, validation, and test lists
-    hparams_data['train_list'] = train_list
-    hparams_data['validation_list'] = validation_list
-    hparams_data['test_list'] = test_list
-
-    # Print data splits for reference
-    print(f"Data Split Summary:\n - Training: {len(train_list)} files\n - Validation: {len(validation_list)} files\n - Test: {len(test_list)} files")
 
 
-    # Patch Extraction Logic
-    if patch_with_stride:
-        print(f"Initiating patch extraction with stride for season '{season}' and location '{loc}'...")
-        extractor = PatchExtractor(hparams_data, hparams_model, hparams_model['model']['label'].strip("'"))
-        hparams_data = extractor.process_files_season_loc(season, loc, out_dir)
-        print(f" Patch extraction completed for season '{season}' and location '{loc}'. Patches saved in: {out_dir}")
-        return hparams_data
-    else:
-        print(f" Patch extraction skipped as 'patch_with_stride' is set to False.")
