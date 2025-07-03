@@ -180,10 +180,14 @@ If you use this code in your research, please cite our paper:
 
 ```bibtex
 @article{IceBench,
-  title={IceBench: A Benchmark for Deep Learning based Sea Ice Type Classification},
-  author={Samira Alkaee Taleghan, Andrew P. Barrett, Walter N. Meier, Farnoush Banaei-Kashani},
-  journal={Journal Name},
-  year={2025}
+  title={IceBench: A Benchmark for Deep-Learning-Based Sea-Ice Type Classification},
+  author={Alkaee Taleghan, Samira and Barrett, Andrew P. and Meier, Walter N. and Banaei-Kashani, Farnoush},
+  journal={Remote Sensing},
+  volume={17},
+  number={9},
+  pages={1646},
+  year={2025},
+  doi={10.3390/rs17091646}
 }
 ```
 
